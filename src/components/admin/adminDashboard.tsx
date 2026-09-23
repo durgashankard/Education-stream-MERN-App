@@ -6,65 +6,51 @@ import { AdminHeader } from "./adminHeader";
 import { AdminSidebar } from "./adminSidebar";
 import { useCookies } from "react-cookie";
 import type { VideoContract } from "../../contracts/videoContract";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CategoryContract } from "../../contracts/categoryContract";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 
 export function AdminDashboard() {
 
     const navigate = useNavigate();
-    const [videos, setVideos] = useState<VideoContract[]>()
-
+    const [videos, setVideos] = useState<VideoContract[]>([]);
+    const [categories, setCategories] = useState<CategoryContract[]>([]);
 
     const [cookies] = useCookies([
         "adminAuth"
     ]);
 
-    if (!cookies.adminAuth) {
-        navigate("/");
-    }
-
-    const LoadVideos = useCallback(() => {
-
-        axios.get(`http://localhost:6060/videos`)
-            .then(response => {
-                setVideos(response.data);
-            })
-
-    }, [videos]);
-
-
+    useEffect(() => {
+        if (!cookies.adminAuth) {
+            navigate("/");
+        }
+    }, [cookies.adminAuth, navigate]);
 
     useEffect(() => {
-        LoadVideos();
-    }, [])
+        axios.get('http://localhost:6060/videos')
+            .then(response => {
+                setVideos(response.data);
+            });
+        axios.get('http://localhost:6060/categories')
+            .then(response => {
+                setCategories(response.data);
+            });
+    }, []);
 
-    const videoRows = useMemo(() => {
-        if (videos?.length === 0) {
-            return (
-                <tr>
-                    <td colSpan={4}> No Videos - Library is Empty </td>
-                </tr>
-            )
+    function getCategoryName(categoryId: number): string {
+        const cat = categories.find(c => c.category_id === categoryId);
+        return cat ? cat.category_name : 'Unknown';
+    }
+
+    function handleDelete(videoId: number) {
+        if (confirm('Are you sure you want to delete this video?')) {
+            axios.delete(`http://localhost:6060/delete-video/${videoId}`)
+                .then(() => {
+                    setVideos(prev => prev.filter(v => v.video_id !== videoId));
+                });
         }
-        else {
-            return (
-                videos?.map((video) =>
-                    <tr key={video.video_id}>
-                        <td>{video.title}</td>
-                        <td>{video.description}</td>
-                        <td>
-                            <iframe src={video.url} width={200} height={100}></iframe>
-                        </td>
-                        <td>
-                            <Link to="/" className="btn btn-warning bi bi-pen-fill">  </Link>
-                            <Link to="/" className="btn btn-danger mx-2 bi bi-trash-fill">  </Link>
-                        </td>
-                    </tr>
-                )
-            )
-        }
-    }, [videos]);
+    }
 
     return (
 
@@ -84,38 +70,187 @@ export function AdminDashboard() {
 
                 {/* Main Content */}
 
-                <div className="mt-4">
-                    <div className="d-flex">
+                <main className="admin-main">
 
+                    <div className="dashboard-heading">
                         <div>
-                            <div>
-                                <input type="text" placeholder="Search videos" style={{ width: '400px' }} className="form-control" />
+                            <h1>Video Management</h1>
+                            <p>Manage and organize your video content library.</p>
+                        </div>
+                        <div className="active-editors">
+                            <div className="editor-avatars">
+                                <span>A</span>
+                                <span>D</span>
+                                <span>S</span>
                             </div>
+                            <small>3 active editors</small>
+                        </div>
+                    </div>
+
+                    {/* Statistics */}
+                    <div className="statistics-grid">
+
+                        <div className="stat-card">
+                            <div className="stat-icon blue">
+                                <i className="bi bi-camera-video"></i>
+                            </div>
+                            <span>TOTAL VIDEOS</span>
+                            <strong>{videos.length}</strong>
+                            <small className="positive">+12%</small>
                         </div>
 
-                    <div>
-                        <Link to="/add-video" className="bi bi-plus btn btn-primary"> Add New Video </Link>
+                        <div className="stat-card">
+                            <div className="stat-icon purple">
+                                <i className="bi bi-eye"></i>
+                            </div>
+                            <span>TOTAL VIEWS</span>
+                            <strong>{videos.reduce((sum, v) => sum + (v.views || 0), 0).toLocaleString()}</strong>
+                            <small className="positive">+8.2%</small>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon green">
+                                <i className="bi bi-hand-thumbs-up"></i>
+                            </div>
+                            <span>TOTAL LIKES</span>
+                            <strong>{videos.reduce((sum, v) => sum + (v.likes || 0), 0).toLocaleString()}</strong>
+                            <small className="positive">+5.4%</small>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon cyan">
+                                <i className="bi bi-collection"></i>
+                            </div>
+                            <span>CATEGORIES</span>
+                            <strong>{categories.length}</strong>
+                            <small className="positive">+2</small>
+                        </div>
+
                     </div>
-                    </div>
-                    <div className="mt-4">
-                        <table className="table table-hover">
+
+
+                    {/* Video Management Card */}
+
+                    <div className="video-management-card">
+
+                        <div className="video-toolbar">
+
+                            <div className="video-search">
+                                <i className="bi bi-search"></i>
+                                <input
+                                    type="text"
+                                    placeholder="Search by video title or ID..."
+                                />
+                            </div>
+
+                            <select className="category-select">
+                                <option>All Categories</option>
+                                {categories.map(c => (
+                                    <option key={c.category_id} value={c.category_id}>
+                                        {c.category_name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button className="filter-button">
+                                <i className="bi bi-funnel"></i> More Filters
+                            </button>
+
+                            <button
+                                className="add-video-button"
+                                onClick={() => navigate('/add-video')}
+                            >
+                                <i className="bi bi-plus"></i> Add New Video
+                            </button>
+
+                        </div>
+
+
+                        <table className="admin-video-table">
                             <thead>
                                 <tr>
-                                    <th>Title</th>
-                                    <th>Description</th>
-                                    <th>Preview</th>
-                                    <th>Actions</th>
+                                    <th style={{ width: '30px' }}>
+                                        <input type="checkbox" />
+                                    </th>
+                                    <th>VIDEO TITLE</th>
+                                    <th>PREVIEW</th>
+                                    <th>CATEGORY</th>
+                                    <th>VIEWS ↕</th>
+                                    <th>LIKES ↕</th>
+                                    <th>ACTIONS</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {
-                                    videoRows
+                                    videos.length === 0
+                                        ? (
+                                            <tr>
+                                                <td colSpan={7} className="empty-table">
+                                                    No videos found — Library is empty.
+                                                </td>
+                                            </tr>
+                                        )
+                                        : videos.map(video => (
+                                            <tr key={video.video_id}>
+                                                <td>
+                                                    <input type="checkbox" />
+                                                </td>
+                                                <td>
+                                                    <div className="video-title-cell">
+                                                        <div className="video-thumbnail">
+                                                            <i className="bi bi-play-fill"></i>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{video.title}</strong>
+                                                            <small>VOD-{video.video_id}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <iframe
+                                                        src={video.url}
+                                                        width={120}
+                                                        height={68}
+                                                        style={{ border: 'none', borderRadius: '4px' }}
+                                                    ></iframe>
+                                                </td>
+                                                <td>
+                                                    <span className="category-badge">
+                                                        {getCategoryName(video.category_id)}
+                                                    </span>
+                                                </td>
+                                                <td>{video.views?.toLocaleString()}</td>
+                                                <td>{video.likes?.toLocaleString()}</td>
+                                                <td>
+                                                    <div className="action-buttons">
+                                                        <button
+                                                            className="edit-button"
+                                                            title="Edit"
+                                                        >
+                                                            <i className="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button
+                                                            className="delete-button"
+                                                            title="Delete"
+                                                            onClick={() => handleDelete(video.video_id)}
+                                                        >
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
                                 }
                             </tbody>
                         </table>
-                    </div>
-                </div>
 
+                        <div className="table-footer">
+                            Showing <strong>1-{videos.length}</strong> of <strong>{videos.length}</strong> videos
+                        </div>
+
+                    </div>
+
+                </main>
 
             </div>
 
@@ -129,7 +264,7 @@ export function AdminDashboard() {
                 </strong>
 
                 <span>
-                    © 2024 EduStream Learning Platform.
+                    © 2026 EduStream Learning Platform.
                     All rights reserved.
                 </span>
 

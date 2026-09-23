@@ -47,26 +47,26 @@ export function AddVideo() {
     }, [])
 
     return (
-        <div>
+        <div className="container-fluid p-3 w-50">
             <form onSubmit={formik.handleSubmit}>
                 <dl>
                     <dt>Video Id</dt>
-                    <dd><input type="text" onChange={formik.handleChange} name="video_id" /></dd>
+                    <dd><input type="text" className="form-control" onChange={formik.handleChange} name="video_id" /></dd>
                     <dt>Title</dt>
-                    <dd><input type="text" name="title" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="title" onChange={formik.handleChange} /></dd>
                     <dt>Description</dt>
-                    <dd><input type="text" name="description" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="description" onChange={formik.handleChange} /></dd>
                     <dt>URL</dt>
-                    <dd><input type="text" name="url" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="url" onChange={formik.handleChange} /></dd>
                     <dt>Likes</dt>
-                    <dd><input type="text" name="likes" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="likes" onChange={formik.handleChange} /></dd>
                     <dt>Dislikes</dt>
-                    <dd><input type="text" name="dislikes" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="dislikes" onChange={formik.handleChange} /></dd>
                     <dt>Views</dt>
-                    <dd><input type="text" name="views" onChange={formik.handleChange} /></dd>
+                    <dd><input type="text" className="form-control" name="views" onChange={formik.handleChange} /></dd>
                     <dt>Category</dt>
                     <dd>
-                        <select name="category_id" onChange={formik.handleChange}>
+                        <select className="form-select" name="category_id" onChange={formik.handleChange}>
                             {
                                 categories?.map(category =>
                                     <option value={category.category_id} key={category.category_id}>{category.category_name}</option>
@@ -75,7 +75,7 @@ export function AddVideo() {
                         </select>
                     </dd>
                 </dl>
-                <button type="submit" className="btn btn-primary">Add Video</button>
+                <button type="submit" className="btn btn-primary w-100">Add Video</button>
             </form>
         </div>
     )
